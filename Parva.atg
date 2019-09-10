@@ -326,6 +326,7 @@ PRODUCTIONS
 
   HaltStatement
   =  "halt"                                  (. CodeGen.LeaveProgram(); .)
+	 [ "(" ReadList ")" ]					 (. // I guess print whatever is put in between the brackets .)
      WEAK ";"
   .
 
