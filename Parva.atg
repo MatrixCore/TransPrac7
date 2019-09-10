@@ -193,14 +193,23 @@ PRODUCTIONS
             | ReturnStatement
             | ReadStatement
             | WriteStatement
+			| EmptyStatement
             | ";"
           ) .
 
   Block<StackFrame frame>
   =                                          (. Table.OpenScope(); .)
-     "{" { Statement<frame> }
-     WEAK "}"                                (. Table.CloseScope(); .)
+     "{" 
+	 (Statement<frame> { Statement<frame> }
+     WEAK "}")								 (. Table.CloseScope(); .)
+	 | EmptyStatement                                 
   .
+  
+ EmptyStatement
+ = 
+	"}"
+ .
+ 
 
   ConstDeclarations
   = "const" OneConst { WEAK "," OneConst }
@@ -325,9 +334,9 @@ PRODUCTIONS
   .
 
   HaltStatement
-  =  "halt"                                  (. CodeGen.LeaveProgram(); .)
-	 [ "(" ReadList ")" ]					 (. // I guess print whatever is put in between the brackets .)
-     WEAK ";"
+  =  "halt"                                  
+	 [ "(" ReadList ")" ]					 
+     WEAK ";"					(. CodeGen.LeaveProgram(); .)
   .
 
   ReturnStatement              
