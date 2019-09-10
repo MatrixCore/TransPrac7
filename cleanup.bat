@@ -12,3 +12,4 @@ del listing.txt
 del *.bak
 del *.old
 del parva\*.bak
+del examples\*.cod
