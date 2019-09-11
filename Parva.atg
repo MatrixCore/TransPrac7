@@ -35,7 +35,7 @@ COMPILER Parva $NC
           case '\'': buf.Append('\''); break;
           case '\"': buf.Append('\"'); break;
           case  'r': buf.Append('\r'); break;
-          case  'n': buf.Append('\n'); break;
+          //case  'n': buf.Append('\n'); break;
           case  't': buf.Append('\t'); break;
           case  'b': buf.Append('\b'); break;
           case  'f': buf.Append('\f'); break;
@@ -193,21 +193,20 @@ PRODUCTIONS
             | ReturnStatement
             | ReadStatement
             | WriteStatement
-			| EmptyStatement
-            | ";"
+            | ";"					(. Warning("Empty Statement"); .)
           ) .
 
   Block<StackFrame frame>
-  =                                          (. Table.OpenScope(); .)
+  =                                          (. Table.OpenScope();; .)
      "{" 
-	 (Statement<frame> { Statement<frame> }
+	 ((Statement<frame> { Statement<frame> }
      WEAK "}")								 (. Table.CloseScope(); .)
-	 | EmptyStatement                                 
+	 | EmptyStatement)                                 
   .
   
  EmptyStatement
  = 
-	"}"
+	"}"									      (. Warning("Empty Statement"); .)
  .
  
 
@@ -320,8 +319,8 @@ PRODUCTIONS
 
   IfStatement<StackFrame frame>
                                              (. Label falseLabel = new Label(!known); .)
-  =  "if" "(" Condition ")"                  (. CodeGen.BranchFalse(falseLabel); .)
-        Statement<frame>           (. falseLabel.Here(); .)
+  =  "if" "(" Condition ")"  (. CodeGen.BranchFalse(falseLabel); .)
+	 Statement<frame>           (. falseLabel.Here(); .)
   .
 
 
@@ -329,7 +328,7 @@ PRODUCTIONS
                                              (. Label loopExit  = new Label(!known);
                                                 Label loopStart = new Label(known); .)
   =  "while" "(" Condition ")"               (. CodeGen.BranchFalse(loopExit); .)
-     Statement<frame>              	     (. CodeGen.Branch(loopStart);
+	  Statement<frame>              	     (. CodeGen.Branch(loopStart);
                                                 loopExit.Here(); .)
   .
 
