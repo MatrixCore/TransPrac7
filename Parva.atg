@@ -36,7 +36,7 @@ COMPILER Parva $NC
           case '\'': buf.Append('\''); break;
           case '\"': buf.Append('\"'); break;
           case  'r': buf.Append('\r'); break;
-          //case  'n': buf.Append('\n'); break;
+          case  'n': buf.Append('\n'); break;
           case  't': buf.Append('\t'); break;
           case  'b': buf.Append('\b'); break;
           case  'f': buf.Append('\f'); break;
@@ -321,9 +321,23 @@ PRODUCTIONS
   .
 
   IfStatement<StackFrame frame>
-                                             (. Label falseLabel = new Label(!known); .)
+                                             (. Label falseLabel = new Label(!known); 
+												Label endLabel = new Label(!known);
+												Label ifelLabel = new Label(!known); .)
+												
   =  "if" "(" Condition ")"  (. CodeGen.BranchFalse(falseLabel); .)
 	 Statement<frame>           (. falseLabel.Here(); .)
+	 
+	 { "elseif" 
+	   "(" Condition ")"	 (. CodeGen.BranchFalse(ifelLabel); .) 
+	    Statement<frame>     (. CodeGen.Branch(endLabel); .)
+							 (. ifelLabel.Here(); .)
+							 
+	   }
+	 
+	 ["else"]
+	 
+							(. endLabel.Here(); .)
   .
 
 
@@ -531,8 +545,9 @@ PRODUCTIONS
   .
 
   StringConst<out string str>
-  =  stringLit                               (. str = token.val;
-                                                str = Unescape(str.Substring(1, str.Length - 2)); .)
+  =  stringLit 		                          (. str = token.val; .)
+	 { ["+"] stringLit }					  (. str += token.val; .)
+                                              (. str = Unescape(str.Substring(1, str.Length - 2)); .)
   .
 
   CharConst<out int value>

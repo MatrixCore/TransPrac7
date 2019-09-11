@@ -69,7 +69,7 @@ namespace Parva {
       int initSP = CodeGen.GetInitSP();
       string codeName = newFileName(inputName, ".cod");
       int codeLength = CodeGen.GetCodeLength();
-      if (givecod) PVM.ListCode(codeName, codeLength);  // Completed Task 1
+      if (Parser.givecod) PVM.ListCode(codeName, codeLength);  // Completed Task 1
       if (!assembledOK || codeLength == 0) {
         Console.WriteLine("Unable to interpret code");
         System.Environment.Exit(1);
