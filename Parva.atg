@@ -12,7 +12,8 @@ COMPILER Parva $NC
   public static bool // tied to pragmas/directives
     debug    = false,
     listCode = false,
-    warnings = true;
+    warnings = true,
+	givecod = false;
 
   const bool
     known = true;
@@ -35,7 +36,7 @@ COMPILER Parva $NC
           case '\'': buf.Append('\''); break;
           case '\"': buf.Append('\"'); break;
           case  'r': buf.Append('\r'); break;
-          case  'n': buf.Append('\n'); break;
+          //case  'n': buf.Append('\n'); break;
           case  't': buf.Append('\t'); break;
           case  'b': buf.Append('\b'); break;
           case  'f': buf.Append('\f'); break;
@@ -114,11 +115,13 @@ TOKENS
 PRAGMAS
   DebugOn     = "$D+" .                      (. debug = true; .)
   DebugOff    = "$D-" .                      (. debug = false; .)
-  StackDump   = "$SD" .                      (. if (debug) { CodeGen.Stack(); } .)
-  HeapDump    = "$HD" .                      (. if (debug) { CodeGen.Heap(); } .)
-  TableDump   = "$ST" .                      (. if (debug) { Table.PrintTable(OutFile.StdOut); } .)
-  GiveCOD     = "$C+" .						 (. listCode = true; .)
-  NoGiveCOD	  = "$C-" .						 (. listCode = false; .)
+  StackDump   = "$SD" .                      (. if (debug) { CodeGen.Stack(); } .) // Task 1
+  HeapDump    = "$HD" .                      (. if (debug) { CodeGen.Heap(); } .) // Task 1
+  TableDump   = "$ST" .                      (. if (debug) { Table.PrintTable(OutFile.StdOut); } .) // Task 1
+  GiveCOD     = "$C+" .						 (. givecod = true; .) // Task 1
+  NoGiveCOD	  = "$C-" .						 (. givecod = false; .) // Task 1
+  ShowWarning = "$W+" . 					 (. warnings = true; .) // Task 3
+  NoWarning	  = "$W-" .						 (. warnings = false; .) // Task 3
 
 COMMENTS FROM "//" TO lf
 COMMENTS FROM "/*" TO "*/"
@@ -193,11 +196,11 @@ PRODUCTIONS
             | ReturnStatement
             | ReadStatement
             | WriteStatement
-            | ";"					(. Warning("Empty Statement"); .)
+            | ";"					(. if (warnings) Warning("Empty Statement");  .) // Task 3
           ) .
 
   Block<StackFrame frame>
-  =                                          (. Table.OpenScope();; .)
+  =                                          (. Table.OpenScope(); .)
      "{" 
 	 ((Statement<frame> { Statement<frame> }
      WEAK "}")								 (. Table.CloseScope(); .)
@@ -206,7 +209,7 @@ PRODUCTIONS
   
  EmptyStatement
  = 
-	"}"									      (. Warning("Empty Statement"); .)
+	"}"									      (. if (warnings) Warning("Empty Statement"); .) // Task 3
  .
  
 
@@ -318,17 +321,9 @@ PRODUCTIONS
   .
 
   IfStatement<StackFrame frame>
-                                (. Label falseLabel = new Label(!known); Label endLabel = new Label(!known);Label ifelLabel = new Label(!known); .)
-  =  "if" "(" Condition ")"  	(. CodeGen.BranchFalse(falseLabel); .)
+                                             (. Label falseLabel = new Label(!known); .)
+  =  "if" "(" Condition ")"  (. CodeGen.BranchFalse(falseLabel); .)
 	 Statement<frame>           (. falseLabel.Here(); .)
-	 {"elseif" 					
-	  "(" Condition ")"  	    (. CodeGen.BranchFalse(ifelLabel); .)
-	  Statement<frame> 			(. CodeGen.Branch(endLabel); .)
-								(. ifelLabel.Here(); .)	
-	  }
-	 ["else"]
-	 
-								(. endLabel.Here(); .)
   .
 
 
@@ -342,7 +337,7 @@ PRODUCTIONS
 
   HaltStatement
   =  "halt"                                  
-	 [ "(" ReadList ")" ]					 
+	 [ "(" ReadList ")" ]		 // Task 2			 
      WEAK ";"					(. CodeGen.LeaveProgram(); .)
   .
 
@@ -535,10 +530,9 @@ PRODUCTIONS
   =  identifier                              (. name = token.val; .)
   .
 
-  StringConst<out string str>				 
-  =  stringLit                               (. str = token.val; .)
-     {["+"] stringLit}						 (. str = str+token.val; .)
-                                             (.  str = Unescape(str.Substring(1, str.Length - 2)); .)
+  StringConst<out string str>
+  =  stringLit                               (. str = token.val;
+                                                str = Unescape(str.Substring(1, str.Length - 2)); .)
   .
 
   CharConst<out int value>
