@@ -343,13 +343,30 @@ PRODUCTIONS
 							
   .
 
-
   WhileStatement<StackFrame frame>
                                              (. Label loopExit  = new Label(!known);
                                                 Label loopStart = new Label(known); .)
   =  "while" "(" Condition ")"               (. CodeGen.BranchFalse(loopExit); .)
-	  Statement<frame>              	     (. CodeGen.Branch(loopStart);
+	  BreakStatement<loopExit, frame>        (. CodeGen.Branch(loopStart);
                                                 loopExit.Here(); .)
+  .
+  
+  DoWhileStatement<StackFrame frame>
+											(. Label doExitLab = new Label(!known);
+											   Label doLabel = new Label(known);
+								             .)
+  = "do" BreakStatement<doExitLab, frame> 
+    "while" "(" Condition ")" ";"  (. CodeGen.BranchFalse(doExitLab);
+									  CodeGen.Branch(doLabel);
+									  doExitLab.Here(); .)
+	.
+
+  BreakStatement<out Label jump, StackFrame frame> (. Label = null; .)
+  =
+	Statement<frame>
+    | "break" (. if (jump == null) SemError("Break statements are expected in loops");
+								   else {CodeGen.Branch(jump);}.)
+	[ BreakStatement<jump, frame> ]						  
   .
 
   HaltStatement
