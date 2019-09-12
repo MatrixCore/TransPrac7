@@ -485,19 +485,22 @@ public class Parser {
 		Expect(rparen_Sym);
 		CodeGen.BranchFalse(falseLabel);
 		Statement(frame);
+		CodeGen.Branch(endLabel);
 		falseLabel.Here();
 		while (la.kind == elseif_Sym) {
 			Get();
 			Expect(lparen_Sym);
 			Condition();
 			Expect(rparen_Sym);
-			CodeGen.BranchFalse(ifelLabel);
+			ifelLabel = new Label(!known);
+			    CodeGen.BranchFalse(ifelLabel);
 			Statement(frame);
 			CodeGen.Branch(endLabel);
 			ifelLabel.Here();
 		}
 		if (la.kind == else_Sym) {
 			Get();
+			Statement(frame);
 		}
 		endLabel.Here();
 	}
@@ -773,8 +776,8 @@ public class Parser {
 				Get();
 			}
 			Expect(stringLit_Sym);
+			str += token.val;
 		}
-		str += token.val;
 		str = Unescape(str.Substring(1, str.Length - 2));
 	}
 

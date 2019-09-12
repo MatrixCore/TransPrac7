@@ -325,19 +325,22 @@ PRODUCTIONS
 												Label endLabel = new Label(!known);
 												Label ifelLabel = new Label(!known); .)
 												
-  =  "if" "(" Condition ")"  (. CodeGen.BranchFalse(falseLabel); .)
-	 Statement<frame>           (. falseLabel.Here(); .)
+  =  "if" "(" Condition ")"  	(. CodeGen.BranchFalse(falseLabel); .)
+	 Statement<frame>           (. CodeGen.Branch(endLabel); 
+								   falseLabel.Here(); .)
 	 
 	 { "elseif" 
-	   "(" Condition ")"	 (. CodeGen.BranchFalse(ifelLabel); .) 
+	   "(" Condition ")"	 (. ifelLabel = new Label(!known); 
+                              CodeGen.BranchFalse(ifelLabel); .)
 	    Statement<frame>     (. CodeGen.Branch(endLabel); .)
 							 (. ifelLabel.Here(); .)
 							 
 	   }
 	 
-	 ["else"]
+	 ["else" Statement<frame>] 
 	 
 							(. endLabel.Here(); .)
+							
   .
 
 
@@ -546,7 +549,7 @@ PRODUCTIONS
 
   StringConst<out string str>
   =  stringLit 		                          (. str = token.val; .)
-	 { ["+"] stringLit }					  (. str += token.val; .)
+	 { ["+"] stringLit (. str += token.val; .)}                       					  
                                               (. str = Unescape(str.Substring(1, str.Length - 2)); .)
   .
 
